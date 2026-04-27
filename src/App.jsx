@@ -22,6 +22,24 @@ function currency(value) {
   }).format(Number(value || 0))
 }
 
+function moneyInputValue(value) {
+  const number = Number(value || 0)
+  if (number === 0) return ''
+  return number.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
+function parseMoneyInput(value) {
+  const clean = String(value)
+    .replace(/[^\d,.]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+
+  return Number(clean || 0)
+}
+
 function createPayments(players) {
   const data = {}
   players.forEach((player) => {
@@ -226,7 +244,6 @@ export default function App() {
     if (!canEdit) return
 
     const title = newAppTitle.trim()
-
     if (!title) return
 
     saveAppData({
@@ -244,7 +261,7 @@ export default function App() {
       ...data,
       fees: {
         ...data.fees,
-        [month]: Number(value || 0)
+        [month]: parseMoneyInput(value)
       }
     })
   }
@@ -276,7 +293,7 @@ export default function App() {
         ...data.payments,
         [player]: {
           ...data.payments[player],
-          [month]: Number(value || 0)
+          [month]: parseMoneyInput(value)
         }
       }
     })
@@ -327,7 +344,7 @@ export default function App() {
         ...data.expenses,
         [category]: {
           ...data.expenses[category],
-          [month]: Number(value || 0)
+          [month]: parseMoneyInput(value)
         }
       }
     })
@@ -493,13 +510,6 @@ export default function App() {
                 O time não precisa de login. Apenas o administrador entra para editar.
               </div>
             </div>
-
-            <div className="card">
-              <b>👀 Para o time</b>
-              <div className="note">
-                Quem tiver o link acessa direto o modo visualização, sem senha.
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -518,403 +528,7 @@ export default function App() {
                 <div className="logo">🏐</div>
 
                 <div>
-                  <h1>{data.appTitle || 'Controle Financeiro · Time de Vôlei'}</h1>
-                  <p className="subtitle">Time visualiza sem login. Só admin edita.</p>
-                </div>
-              </div>
-
-              {!session ? (
-                <button className="btn light" onClick={() => setLoginScreen(true)}>
-                  🔒 Login
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span className={'badge ' + (canEdit ? 'admin' : 'viewer')}>
-                    {canEdit ? 'ADMIN' : 'VISUALIZAÇÃO'}
-                  </span>
-
-                  <button className="btn red" onClick={logout}>
-                    Sair
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {!session && (
-            <div className="card">
-              <b>👀 Modo visualização</b>
-              <div className="note">
-                Qualquer pessoa com o link pode acompanhar. Para editar, clique em Login no topo.
-              </div>
-            </div>
-          )}
-
-          {session && (
-            <div className="card">
-              <div className="header-top">
-                <div>
-                  <b>{canEdit ? '✅ Administrador ativo' : '👀 Visualizador'}</b>
-                  <div className="note">{session.user.email}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {canEdit && (
-            <div className="card">
-              <div className="top-actions">
-                <button
-                  className={'btn ' + (editTitleMode ? 'yellow' : 'light')}
-                  onClick={() => setEditTitleMode(!editTitleMode)}
-                >
-                  ✏️ Nome do app
-                </button>
-              </div>
-
-              {editTitleMode && (
-                <div className="add-row" style={{ marginTop: 10 }}>
-                  <input
-                    className="input"
-                    placeholder="Nome do time ou título do app"
-                    value={newAppTitle}
-                    onChange={(e) => setNewAppTitle(e.target.value)}
-                  />
-
-                  <button className="btn" onClick={updateAppTitle}>
-                    Salvar
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="tabs">
-            <button
-              className={'tab ' + (tab === 'inicio' ? 'active' : '')}
-              onClick={() => setTab('inicio')}
-            >
-              Início
-            </button>
-
-            <button
-              className={'tab ' + (tab === 'pagamentos' ? 'active' : '')}
-              onClick={() => setTab('pagamentos')}
-            >
-              Pagamentos
-            </button>
-
-            <button
-              className={'tab ' + (tab === 'despesas' ? 'active' : '')}
-              onClick={() => setTab('despesas')}
-            >
-              Despesas
-            </button>
-          </div>
-
-          {tab === 'inicio' && (
-            <>
-              <div className="grid-cards">
-                <Metric title="💰 Caixa Atual" value={currency(summary.caixa)} highlight />
-                <Metric title="📈 Arrecadado Ano" value={currency(summary.arrecadadoAno)} />
-                <Metric title="💸 Despesas Ano" value={currency(summary.despesasAno)} />
-                <Metric title="✅ Pagamentos" value={summary.pagamentos} />
-              </div>
-
-              <div className="card">
-                <h2 className="panel-title">📊 Visão mês a mês</h2>
-
-                <div className="scroll">
-                  <table className="min-wide">
-                    <thead>
-                      <tr>
-                        <th>Mês</th>
-                        <th>Mensalidade</th>
-                        <th>Pagos</th>
-                        <th>Parciais</th>
-                        <th>Pendentes</th>
-                        <th>Arrecadado</th>
-                        <th>Despesas</th>
-                        <th>Resultado</th>
-                        <th>Caixa</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {summary.monthly.map((m) => (
-                        <tr key={m.month}>
-                          <td><b>{m.month}</b></td>
-                          <td>{currency(m.mensalidade)}</td>
-                          <td>{m.pagos}</td>
-                          <td>{m.parciais}</td>
-                          <td>{m.pendentes}</td>
-                          <td>{currency(m.arrecadado)}</td>
-                          <td>{currency(m.despesas)}</td>
-                          <td className={m.resultado >= 0 ? 'bg-green' : 'bg-red'}>
-                            {currency(m.resultado)}
-                          </td>
-                          <td>{currency(m.caixa)}</td>
-                          <td>{m.resultado >= 0 ? '🟢 Positivo' : '🔴 Negativo'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
-
-          {tab === 'pagamentos' && (
-            <>
-              <div className="card">
-                <h2 className="panel-title">💵 Mensalidade por mês</h2>
-
-                <div className="month-grid">
-                  {months.map((month) => (
-                    <label className="month-box" key={month}>
-                      <span>{month}</span>
-
-                      <input
-                        className="money-input"
-                        disabled={!canEdit}
-                        type="number"
-                        value={Number(data.fees[month] || 0) === 0 ? '' : data.fees[month]}
-                        onChange={(e) => updateFees(month, e.target.value)}
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="card">
-                <div className="top-actions">
-                  {canEdit && (
-                    <>
-                      <button
-                        className={'btn ' + (manualPaymentMode ? 'blue' : '')}
-                        onClick={() => setManualPaymentMode(!manualPaymentMode)}
-                      >
-                        ✏️ {manualPaymentMode ? 'Ocultar valores' : 'Editar valores'}
-                      </button>
-
-                      <button
-                        className={'btn ' + (editPlayersMode ? 'yellow' : 'light')}
-                        onClick={() => setEditPlayersMode(!editPlayersMode)}
-                      >
-                        ✏️ Jogadoras
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {canEdit && editPlayersMode && (
-                  <div className="add-row" style={{ marginTop: 10 }}>
-                    <input
-                      className="input"
-                      placeholder="Nova jogadora"
-                      value={newPlayer}
-                      onChange={(e) => setNewPlayer(e.target.value)}
-                    />
-
-                    <button className="btn" onClick={addPlayer}>
-                      Adicionar
-                    </button>
-                  </div>
-                )}
-
-                <div className="scroll" style={{ marginTop: 12 }}>
-                  <table className="min-extra">
-                    <thead>
-                      <tr>
-                        <th>Jogadora</th>
-                        {months.map((m) => <th key={m}>{m}</th>)}
-                        <th>Total</th>
-                        <th>Ação</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {data.players.map((player) => {
-                        const total = months.reduce((s, month) => {
-                          return s + Number(data.payments[player]?.[month] || 0)
-                        }, 0)
-
-                        return (
-                          <tr key={player}>
-                            <td className="left">{player}</td>
-
-                            {months.map((month) => {
-                              const value = Number(data.payments[player]?.[month] || 0)
-                              const full = Number(data.fees[month] || 0)
-                              const paid = value > 0
-
-                              const cellClass =
-                                value >= full && full > 0
-                                  ? 'bg-green'
-                                  : paid
-                                    ? 'bg-yellow'
-                                    : ''
-
-                              return (
-                                <td key={month} className={cellClass}>
-                                  {manualPaymentMode && canEdit ? (
-                                    <input
-                                      className="money-input"
-                                      type="number"
-                                      value={value === 0 ? '' : value}
-                                      onChange={(e) => editPayment(player, month, e.target.value)}
-                                    />
-                                  ) : (
-                                    <button
-                                      disabled={!canEdit}
-                                      className={'check ' + (paid ? 'paid' : '')}
-                                      onClick={() => togglePayment(player, month)}
-                                    >
-                                      {paid ? '✓' : ''}
-                                    </button>
-                                  )}
-                                </td>
-                              )
-                            })}
-
-                            <td><b>{currency(total)}</b></td>
-
-                            <td>
-                              {canEdit && editPlayersMode ? (
-                                <button className="btn red" onClick={() => removePlayer(player)}>
-                                  Remover
-                                </button>
-                              ) : (
-                                '—'
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="note">
-                  Normal: só check. ✏️ Editar valores libera valores manuais para pagamentos parciais.
-                </div>
-              </div>
-            </>
-          )}
-
-          {tab === 'despesas' && (
-            <div className="card">
-              <div className="top-actions">
-                {canEdit && (
-                  <button
-                    className={'btn ' + (editExpensesMode ? 'yellow' : '')}
-                    onClick={() => setEditExpensesMode(!editExpensesMode)}
-                  >
-                    ✏️ {editExpensesMode ? 'Bloquear edição' : 'Editar despesas'}
-                  </button>
-                )}
-              </div>
-
-              {canEdit && editExpensesMode && (
-                <div className="add-row" style={{ marginTop: 10 }}>
-                  <input
-                    className="input"
-                    placeholder="Nova despesa"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                  />
-
-                  <button className="btn" onClick={addCategory}>
-                    Adicionar
-                  </button>
-                </div>
-              )}
-
-              <div className="scroll" style={{ marginTop: 12 }}>
-                <table className="min-extra">
-                  <thead>
-                    <tr>
-                      <th>Categoria</th>
-                      {months.map((m) => <th key={m}>{m}</th>)}
-                      <th>Total</th>
-                      <th>Ação</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {data.categories.map((cat) => {
-                      const total = months.reduce((s, month) => {
-                        return s + Number(data.expenses[cat]?.[month] || 0)
-                      }, 0)
-
-                      return (
-                        <tr key={cat}>
-                          <td className="left">{cat}</td>
-
-                          {months.map((month) => (
-                            <td key={month}>
-                              <input
-                                className="money-input"
-                                disabled={!canEdit}
-                                type="number"
-                                value={Number(data.expenses[cat]?.[month] || 0) === 0 ? '' : data.expenses[cat]?.[month]}
-                                onChange={(e) => editExpense(cat, month, e.target.value)}
-                              />
-                            </td>
-                          ))}
-
-                          <td><b>{currency(total)}</b></td>
-
-                          <td>
-                            {canEdit && editExpensesMode ? (
-                              <button className="btn red" onClick={() => removeCategory(cat)}>
-                                Remover
-                              </button>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-
-                    <tr className="bg-green">
-                      <td><b>Total</b></td>
-
-                      {months.map((month) => (
-                        <td key={month}>
-                          {currency(
-                            data.categories.reduce((s, cat) => {
-                              return s + Number(data.expenses[cat]?.[month] || 0)
-                            }, 0)
-                          )}
-                        </td>
-                      ))}
-
-                      <td><b>{currency(summary.despesasAno)}</b></td>
-                      <td>—</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          <div className="note" style={{ textAlign: 'center', paddingBottom: 12 }}>
-            {saving ? 'Salvando...' : 'Dados online pelo Supabase.'}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Metric({ title, value, highlight }) {
-  return (
-    <div className={'metric ' + (highlight ? 'highlight' : '')}>
-      <div className="metric-title">{title}</div>
-      <div className="metric-value">{value}</div>
-    </div>
-  )
-}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {!editTitleMode ? (
+                      <>
+                        <h1>{data.appTitle || 'Controle Financeiro · Time de Vôlei'}</h
