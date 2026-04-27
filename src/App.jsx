@@ -46,6 +46,7 @@ function createExpenses(categories) {
 
 function defaultState() {
   return {
+    appTitle: 'Controle Financeiro · Time de Vôlei',
     players: initialPlayers,
     categories: initialCategories,
     fees: initialFees,
@@ -71,10 +72,12 @@ export default function App() {
 
   const [newPlayer, setNewPlayer] = useState('')
   const [newCategory, setNewCategory] = useState('')
+  const [newAppTitle, setNewAppTitle] = useState('')
 
   const [manualPaymentMode, setManualPaymentMode] = useState(false)
   const [editPlayersMode, setEditPlayersMode] = useState(false)
   const [editExpensesMode, setEditExpensesMode] = useState(false)
+  const [editTitleMode, setEditTitleMode] = useState(false)
 
   const canEdit = role === 'admin'
 
@@ -102,8 +105,13 @@ export default function App() {
       setManualPaymentMode(false)
       setEditPlayersMode(false)
       setEditExpensesMode(false)
+      setEditTitleMode(false)
     }
   }, [session])
+
+  useEffect(() => {
+    setNewAppTitle(data.appTitle || 'Controle Financeiro · Time de Vôlei')
+  }, [data.appTitle])
 
   async function loadProfile(userId) {
     const { data: profile } = await supabase
@@ -134,6 +142,7 @@ export default function App() {
   function normalizeData(d) {
     const clean = { ...defaultState(), ...d }
 
+    clean.appTitle = clean.appTitle || 'Controle Financeiro · Time de Vôlei'
     clean.players = clean.players || initialPlayers
     clean.categories = clean.categories || initialCategories
     clean.fees = { ...initialFees, ...(clean.fees || {}) }
@@ -210,6 +219,22 @@ export default function App() {
     setManualPaymentMode(false)
     setEditPlayersMode(false)
     setEditExpensesMode(false)
+    setEditTitleMode(false)
+  }
+
+  function updateAppTitle() {
+    if (!canEdit) return
+
+    const title = newAppTitle.trim()
+
+    if (!title) return
+
+    saveAppData({
+      ...data,
+      appTitle: title
+    })
+
+    setEditTitleMode(false)
   }
 
   function updateFees(month, value) {
@@ -493,7 +518,7 @@ export default function App() {
                 <div className="logo">🏐</div>
 
                 <div>
-                  <h1>Controle Financeiro · Time de Vôlei</h1>
+                  <h1>{data.appTitle || 'Controle Financeiro · Time de Vôlei'}</h1>
                   <p className="subtitle">Time visualiza sem login. Só admin edita.</p>
                 </div>
               </div>
@@ -533,6 +558,34 @@ export default function App() {
                   <div className="note">{session.user.email}</div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {canEdit && (
+            <div className="card">
+              <div className="top-actions">
+                <button
+                  className={'btn ' + (editTitleMode ? 'yellow' : 'light')}
+                  onClick={() => setEditTitleMode(!editTitleMode)}
+                >
+                  ✏️ Nome do app
+                </button>
+              </div>
+
+              {editTitleMode && (
+                <div className="add-row" style={{ marginTop: 10 }}>
+                  <input
+                    className="input"
+                    placeholder="Nome do time ou título do app"
+                    value={newAppTitle}
+                    onChange={(e) => setNewAppTitle(e.target.value)}
+                  />
+
+                  <button className="btn" onClick={updateAppTitle}>
+                    Salvar
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -626,7 +679,7 @@ export default function App() {
                         className="money-input"
                         disabled={!canEdit}
                         type="number"
-                        value={data.fees[month]}
+                        value={Number(data.fees[month] || 0) === 0 ? '' : data.fees[month]}
                         onChange={(e) => updateFees(month, e.target.value)}
                       />
                     </label>
@@ -709,7 +762,7 @@ export default function App() {
                                     <input
                                       className="money-input"
                                       type="number"
-                                      value={value}
+                                      value={value === 0 ? '' : value}
                                       onChange={(e) => editPayment(player, month, e.target.value)}
                                     />
                                   ) : (
@@ -805,7 +858,7 @@ export default function App() {
                                 className="money-input"
                                 disabled={!canEdit}
                                 type="number"
-                                value={data.expenses[cat]?.[month] || 0}
+                                value={Number(data.expenses[cat]?.[month] || 0) === 0 ? '' : data.expenses[cat]?.[month]}
                                 onChange={(e) => editExpense(cat, month, e.target.value)}
                               />
                             </td>
