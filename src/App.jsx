@@ -58,7 +58,7 @@ export default function App() {
   const [tab, setTab] = useState('inicio')
   const [session, setSession] = useState(null)
   const [role, setRole] = useState('viewer')
-  const [showLogin, setShowLogin] = useState(false)
+  const [loginScreen, setLoginScreen] = useState(false)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -199,7 +199,7 @@ export default function App() {
       return
     }
 
-    setShowLogin(false)
+    setLoginScreen(false)
     setEmail('')
     setPassword('')
   }
@@ -404,8 +404,77 @@ export default function App() {
     return (
       <div className="app-shell">
         <div className="phone">
+          <div className="content">Carregando...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (loginScreen && !session) {
+    return (
+      <div className="app-shell">
+        <div className="phone">
+          <div className="notch" />
+
           <div className="content">
-            Carregando...
+            <div className="header">
+              <div className="header-top">
+                <div className="logo-row">
+                  <div className="logo">🔒</div>
+
+                  <div>
+                    <h1>Login do Administrador</h1>
+                    <p className="subtitle">Acesse para editar pagamentos e despesas.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card" style={{ marginTop: 18 }}>
+              <b>Entrar como admin</b>
+
+              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <input
+                  className="input"
+                  placeholder="Email admin"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+
+                <input
+                  className="input"
+                  placeholder="Senha"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+
+                <button className="btn" onClick={login}>
+                  Entrar
+                </button>
+
+                <button className="btn light" onClick={() => setLoginScreen(false)}>
+                  Voltar para visualização
+                </button>
+              </div>
+
+              {authMessage && (
+                <div className="note" style={{ color: '#991b1b', marginTop: 12 }}>
+                  {authMessage}
+                </div>
+              )}
+
+              <div className="note" style={{ marginTop: 12 }}>
+                O time não precisa de login. Apenas o administrador entra para editar.
+              </div>
+            </div>
+
+            <div className="card">
+              <b>👀 Para o time</b>
+              <div className="note">
+                Quem tiver o link acessa direto o modo visualização, sem senha.
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -430,7 +499,7 @@ export default function App() {
               </div>
 
               {!session ? (
-                <button className="btn light" onClick={() => setShowLogin(true)}>
+                <button className="btn light" onClick={() => setLoginScreen(true)}>
                   🔒 Login
                 </button>
               ) : (
@@ -447,48 +516,7 @@ export default function App() {
             </div>
           </div>
 
-          {showLogin && !session && (
-            <div className="card">
-              <b>🔒 Login do administrador</b>
-
-              <div className="login-row" style={{ marginTop: 8 }}>
-                <input
-                  className="input"
-                  placeholder="Email admin"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-
-                <input
-                  className="input"
-                  placeholder="Senha"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-
-                <button className="btn" onClick={login}>
-                  Entrar
-                </button>
-
-                <button className="btn light" onClick={() => setShowLogin(false)}>
-                  Cancelar
-                </button>
-              </div>
-
-              {authMessage && (
-                <div className="note" style={{ color: '#991b1b' }}>
-                  {authMessage}
-                </div>
-              )}
-
-              <div className="note">
-                Apenas administradores conseguem editar. O time visualiza sem login.
-              </div>
-            </div>
-          )}
-
-          {!session && !showLogin && (
+          {!session && (
             <div className="card">
               <b>👀 Modo visualização</b>
               <div className="note">
