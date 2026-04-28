@@ -476,43 +476,52 @@ export default function App() {
   }, [data])
 
   function sendWhatsAppReport() {
-    if (!canEdit) return
+  if (!canEdit) return
 
-    const now = new Date()
-    const date = now.toLocaleDateString('pt-BR')
+  const now = new Date()
+  const date = now.toLocaleDateString('pt-BR')
 
-    const currentMonthIndex = now.getMonth()
-    const reportMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1
-    const reportMonth = months[reportMonthIndex]
-    const monthData = summary.monthly.find((m) => m.month === reportMonth)
+  const currentMonthIndex = now.getMonth()
+  const currentMonth = months[currentMonthIndex]
 
-    if (!monthData) return
+  const previousMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1
+  const previousMonth = months[previousMonthIndex]
 
-    const totalPlayers = data.players.length
-    const paidPlayers = monthData.pagos
-    const paidPercent = totalPlayers > 0
-      ? ((paidPlayers / totalPlayers) * 100).toFixed(0)
-      : 0
+  const currentMonthData = summary.monthly.find((m) => m.month === currentMonth)
+  const previousMonthData = summary.monthly.find((m) => m.month === previousMonth)
 
-    const message = `
+  if (!currentMonthData || !previousMonthData) return
+
+  const totalPlayers = data.players.length
+  const paidPlayers = currentMonthData.pagos
+  const paidPercent = totalPlayers > 0
+    ? ((paidPlayers / totalPlayers) * 100).toFixed(0)
+    : 0
+
+  const previousPaidPlayers = previousMonthData.pagos
+  const previousPaidPercent = totalPlayers > 0
+    ? ((previousPaidPlayers / totalPlayers) * 100).toFixed(0)
+    : 0
+
+  const message = `
 🏐 ${data.appTitle || 'Controle Financeiro do Time'}
 
 📅 Data: ${date}
 
 💰 Caixa atual: ${currency(summary.caixa)}
-📈 Arrecadado no mês: ${currency(monthData.arrecadado)}
-💸 Gastos no mês: ${currency(monthData.despesas)}
-✅ Pagamentos lançados em ${reportMonth}: ${paidPlayers}/${totalPlayers} jogadoras (${paidPercent}%)
+📈 Arrecadado no mês: ${currency(currentMonthData.arrecadado)}
+💸 Gastos no mês: ${currency(currentMonthData.despesas)}
+✅ Pagamentos lançados em ${currentMonth}: ${paidPlayers}/${totalPlayers} jogadoras (${paidPercent}%)
 
-📊 Balanço geral de ${reportMonth}:
-${reportMonth}: Arrecadado ${currency(monthData.arrecadado)} | Gastos ${currency(monthData.despesas)} | ${paidPlayers}/${totalPlayers} jogadoras (${paidPercent}%) | Caixa ${currency(monthData.caixa)}
+📊 Balanço geral de ${previousMonth}:
+${previousMonth}: Arrecadado ${currency(previousMonthData.arrecadado)} | Gastos ${currency(previousMonthData.despesas)} | ${previousPaidPlayers}/${totalPlayers} jogadoras (${previousPaidPercent}%) | Caixa ${currency(previousMonthData.caixa)}
 
 Enviado pelo app de controle do time
 `
 
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`
-    window.open(url, '_blank')
-  }
+  const url = `https://wa.me/?text=${encodeURIComponent(message)}`
+  window.open(url, '_blank')
+}
 
   if (loading) {
     return (
