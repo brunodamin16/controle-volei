@@ -486,30 +486,33 @@ export default function App() {
 
   function sendWhatsAppReport() {
     const now = new Date()
-
     const date = now.toLocaleDateString('pt-BR')
-    const time = now.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
 
-    const monthlyText = summary.monthly.map((m) => {
-      return `• ${m.month}: Arrecadado ${currency(m.arrecadado)} | Gastos ${currency(m.despesas)} | Resultado ${currency(m.resultado)} | Caixa ${currency(m.caixa)}`
-    }).join('\n')
+    const currentMonthIndex = now.getMonth()
+    const reportMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1
+    const reportMonth = months[reportMonthIndex]
+    const monthData = summary.monthly.find((m) => m.month === reportMonth)
+
+    if (!monthData) return
+
+    const totalPlayers = data.players.length
+    const paidPlayers = monthData.pagos
+    const paidPercent = totalPlayers > 0
+      ? ((paidPlayers / totalPlayers) * 100).toFixed(0)
+      : 0
 
     const message = `
-🏐 *${data.appTitle || 'Relatório Financeiro do Time'}*
+🏐 *${data.appTitle || 'Controle Financeiro do Time'}*
 
 📅 Data: ${date}
-⏰ Hora: ${time}
 
 💰 *Caixa atual:* ${currency(summary.caixa)}
-📈 *Arrecadado no ano:* ${currency(summary.arrecadadoAno)}
-💸 *Gastos no ano:* ${currency(summary.despesasAno)}
-✅ *Pagamentos lançados:* ${summary.pagamentos}
+📈 *Arrecadado no mês:* ${currency(monthData.arrecadado)}
+💸 *Gastos no mês:* ${currency(monthData.despesas)}
+✅ *Pagamentos lançados em ${reportMonth}:* ${paidPlayers}/${totalPlayers} jogadoras (${paidPercent}%)
 
-📊 *Resumo mês a mês:*
-${monthlyText}
+📊 *Balanço geral de ${reportMonth}:*
+${reportMonth}: Arrecadado ${currency(monthData.arrecadado)} | Gastos ${currency(monthData.despesas)} | Resultado ${currency(monthData.resultado)} | Caixa ${currency(monthData.caixa)}
 
 Enviado pelo app de controle do time.
 `
@@ -723,26 +726,6 @@ Enviado pelo app de controle do time.
                 <Metric title="📈 Arrecadado Ano" value={currency(summary.arrecadadoAno)} />
                 <Metric title="💸 Despesas Ano" value={currency(summary.despesasAno)} />
                 <Metric title="✅ Pagamentos" value={summary.pagamentos} />
-              </div>
-
-              <div className="card">
-                <button
-                  className="btn"
-                  onClick={sendWhatsAppReport}
-                  style={{
-                    width: '100%',
-                    background: '#16a34a',
-                    color: '#fff',
-                    fontSize: 16,
-                    padding: 14
-                  }}
-                >
-                  🟢 Enviar relatório no WhatsApp
-                </button>
-
-                <div className="note">
-                  Gera relatório com caixa, arrecadação, gastos, saldo e data de envio.
-                </div>
               </div>
 
               <div className="card">
@@ -1066,6 +1049,29 @@ Enviado pelo app de controle do time.
               </div>
             </div>
           )}
+
+          <button
+            onClick={sendWhatsAppReport}
+            title="Enviar relatório"
+            style={{
+              position: 'fixed',
+              right: 18,
+              bottom: 18,
+              width: 54,
+              height: 54,
+              borderRadius: '50%',
+              border: 'none',
+              background: '#16a34a',
+              color: '#fff',
+              fontSize: 24,
+              fontWeight: 900,
+              boxShadow: '0 10px 24px rgba(22, 163, 74, 0.35)',
+              zIndex: 999,
+              cursor: 'pointer'
+            }}
+          >
+            💬
+          </button>
 
           <div className="note" style={{ textAlign: 'center', paddingBottom: 12 }}>
             {saving ? 'Salvando...' : 'Dados online pelo Supabase.'}
